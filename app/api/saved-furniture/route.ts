@@ -5,14 +5,16 @@ import { getCurrentUser } from "@/lib/auth";
 import { apiSuccess, apiError } from "@/lib/api";
 
 const saveSchema = z.object({
-  furnitureId: z.number(),
-  name: z.string(),
-  category: z.string(),
-  price: z.string(),
-  imageUrl: z.string(),
+  furnitureId: z
+    .number({ error: "furnitureId is required" })
+    .int()
+    .positive("furnitureId must be a positive integer"),
+  name: z.string({ error: "name is required" }).min(1),
+  category: z.string({ error: "category is required" }).min(1),
+  price: z.string({ error: "price is required" }).min(1),
+  imageUrl: z.string({ error: "imageUrl is required" }).min(1),
 });
 
-// GET /api/saved-furniture — list user's saved items
 export async function GET() {
   const user = await getCurrentUser();
   if (!user) return apiError("Unauthorized", 401);
@@ -25,17 +27,24 @@ export async function GET() {
   return apiSuccess({ saved });
 }
 
-// POST /api/saved-furniture — save an item
 export async function POST(req: NextRequest) {
   const user = await getCurrentUser();
   if (!user) return apiError("Unauthorized", 401);
 
-  const body = await req.json();
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return apiError("Invalid JSON in request body", 400);
+  }
+
   const parsed = saveSchema.safeParse(body);
   if (!parsed.success) return apiError(parsed.error.issues[0].message, 422);
 
   const saved = await prisma.savedFurniture.upsert({
-    where: { userId_furnitureId: { userId: user.id, furnitureId: parsed.data.furnitureId } },
+    where: {
+      userId_furnitureId: { userId: user.id, furnitureId: parsed.data.furnitureId },
+    },
     create: { userId: user.id, ...parsed.data },
     update: {},
   });
@@ -43,13 +52,14 @@ export async function POST(req: NextRequest) {
   return apiSuccess({ saved }, 201);
 }
 
-// DELETE /api/saved-furniture?id=furnitureId — unsave an item
 export async function DELETE(req: NextRequest) {
   const user = await getCurrentUser();
   if (!user) return apiError("Unauthorized", 401);
 
   const furnitureId = Number(new URL(req.url).searchParams.get("id"));
-  if (!furnitureId) return apiError("furnitureId is required", 422);
+  if (!furnitureId || !Number.isInteger(furnitureId) || furnitureId <= 0) {
+    return apiError("Valid furnitureId query param is required", 422);
+  }
 
   await prisma.savedFurniture.deleteMany({
     where: { userId: user.id, furnitureId },

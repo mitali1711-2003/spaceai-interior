@@ -6,16 +6,27 @@ import { signToken, setAuthCookie } from "@/lib/auth";
 import { apiSuccess, apiError } from "@/lib/api";
 
 const schema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  name: z
+    .string({ error: "Name is required" })
+    .min(2, "Name must be at least 2 characters"),
+  email: z
+    .string({ error: "Email is required" })
+    .email("Invalid email address"),
+  password: z
+    .string({ error: "Password is required" })
+    .min(8, "Password must be at least 8 characters"),
 });
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const parsed = schema.safeParse(body);
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return apiError("Invalid JSON in request body", 400);
+    }
 
+    const parsed = schema.safeParse(body);
     if (!parsed.success) {
       return apiError(parsed.error.issues[0].message, 422);
     }
@@ -29,7 +40,6 @@ export async function POST(req: NextRequest) {
 
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Start 14-day free trial
     const trialEndsAt = new Date();
     trialEndsAt.setDate(trialEndsAt.getDate() + 14);
 
@@ -38,7 +48,7 @@ export async function POST(req: NextRequest) {
         name,
         email,
         password: hashedPassword,
-        plan: "pro", // trial gives Pro access
+        plan: "pro",
         trialEndsAt,
       },
       select: {
@@ -54,7 +64,8 @@ export async function POST(req: NextRequest) {
     const token = signToken({ userId: user.id, email: user.email });
     await setAuthCookie(token);
 
-    return apiSuccess({ user, token }, 201);
+    // Never return the raw token — session is cookie-based
+    return apiSuccess({ user }, 201);
   } catch (err) {
     console.error("[register]", err);
     return apiError("Something went wrong. Please try again.", 500);

@@ -5,12 +5,14 @@ import { getCurrentUser } from "@/lib/auth";
 import { apiSuccess, apiError } from "@/lib/api";
 
 const createSchema = z.object({
-  name: z.string().min(1, "Room name is required"),
-  style: z.string().optional().default("Modern"),
-  description: z.string().optional(),
+  name: z
+    .string({ error: "Room name is required" })
+    .min(1, "Room name is required")
+    .max(100, "Room name is too long"),
+  style: z.string().max(60).optional().default("Modern"),
+  description: z.string().max(500).optional(),
 });
 
-// GET /api/rooms — list all rooms for the logged-in user
 export async function GET() {
   const user = await getCurrentUser();
   if (!user) return apiError("Unauthorized", 401);
@@ -18,13 +20,16 @@ export async function GET() {
   const rooms = await prisma.room.findMany({
     where: { userId: user.id },
     orderBy: { createdAt: "desc" },
-    include: { designs: { select: { id: true, styleName: true, status: true, createdAt: true } } },
+    include: {
+      designs: {
+        select: { id: true, styleName: true, status: true, createdAt: true },
+      },
+    },
   });
 
   return apiSuccess({ rooms });
 }
 
-// POST /api/rooms — create a new room
 export async function POST(req: NextRequest) {
   const user = await getCurrentUser();
   if (!user) return apiError("Unauthorized", 401);
@@ -47,7 +52,13 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const body = await req.json();
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return apiError("Invalid JSON in request body", 400);
+  }
+
   const parsed = createSchema.safeParse(body);
   if (!parsed.success) return apiError(parsed.error.issues[0].message, 422);
 

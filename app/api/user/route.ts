@@ -5,15 +5,18 @@ import { getCurrentUser } from "@/lib/auth";
 import { apiSuccess, apiError } from "@/lib/api";
 
 const updateSchema = z.object({
-  name: z.string().min(2).optional(),
+  name: z
+    .string({ error: "Name is required" })
+    .min(2, "Name must be at least 2 characters")
+    .max(80, "Name is too long")
+    .optional(),
 });
 
-// GET /api/user — get current user profile
 export async function GET() {
   const user = await getCurrentUser();
   if (!user) return apiError("Unauthorized", 401);
 
-  const stats = await prisma.$transaction([
+  const [roomCount, savedCount, designCount] = await prisma.$transaction([
     prisma.room.count({ where: { userId: user.id } }),
     prisma.savedFurniture.count({ where: { userId: user.id } }),
     prisma.design.count({ where: { userId: user.id } }),
@@ -21,35 +24,42 @@ export async function GET() {
 
   const trialDaysLeft =
     user.trialEndsAt
-      ? Math.max(0, Math.ceil((user.trialEndsAt.getTime() - Date.now()) / 86400000))
+      ? Math.max(0, Math.ceil((user.trialEndsAt.getTime() - Date.now()) / 86_400_000))
       : null;
 
   return apiSuccess({
-    user: {
-      ...user,
-      trialDaysLeft,
-    },
-    stats: {
-      rooms: stats[0],
-      savedFurniture: stats[1],
-      designs: stats[2],
-    },
+    user: { ...user, trialDaysLeft },
+    stats: { rooms: roomCount, savedFurniture: savedCount, designs: designCount },
   });
 }
 
-// PATCH /api/user — update profile
 export async function PATCH(req: NextRequest) {
   const user = await getCurrentUser();
   if (!user) return apiError("Unauthorized", 401);
 
-  const body = await req.json();
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return apiError("Invalid JSON in request body", 400);
+  }
+
   const parsed = updateSchema.safeParse(body);
   if (!parsed.success) return apiError(parsed.error.issues[0].message, 422);
 
+  if (!parsed.data.name) return apiError("No fields provided to update", 422);
+
   const updated = await prisma.user.update({
     where: { id: user.id },
-    data: parsed.data,
-    select: { id: true, name: true, email: true, plan: true, trialEndsAt: true, updatedAt: true },
+    data: { name: parsed.data.name },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      plan: true,
+      trialEndsAt: true,
+      updatedAt: true,
+    },
   });
 
   return apiSuccess({ user: updated });
