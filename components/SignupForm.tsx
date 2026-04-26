@@ -19,16 +19,35 @@ export function SignupForm() {
   const [password, setPassword] = useState("");
   const [agreed, setAgreed] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const [step, setStep] = useState<"form" | "success">("form");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!agreed) return;
     setLoading(true);
-    setTimeout(() => {
+    setError("");
+
+    try {
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error ?? "Registration failed. Please try again.");
+        setLoading(false);
+        return;
+      }
+
       setLoading(false);
       setStep("success");
-    }, 1500);
+    } catch {
+      setError("Network error. Please check your connection.");
+      setLoading(false);
+    }
   };
 
   return (
@@ -210,6 +229,13 @@ export function SignupForm() {
                   <Link href="#" className="text-electric-blue hover:underline">Privacy Policy</Link>
                 </span>
               </div>
+
+              {/* Error */}
+              {error && (
+                <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-sm text-red-400">
+                  {error}
+                </div>
+              )}
 
               {/* Submit */}
               <button

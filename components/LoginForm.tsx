@@ -11,12 +11,33 @@ export function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    // Simulate auth — replace with real auth logic
-    setTimeout(() => setLoading(false), 1500);
+    setError("");
+
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error ?? "Login failed. Please try again.");
+        setLoading(false);
+        return;
+      }
+
+      // Redirect to home on success
+      window.location.href = "/";
+    } catch {
+      setError("Network error. Please check your connection.");
+      setLoading(false);
+    }
   };
 
   return (
@@ -131,6 +152,13 @@ export function LoginForm() {
                 </button>
               </div>
             </div>
+
+            {/* Error */}
+            {error && (
+              <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-sm text-red-400">
+                {error}
+              </div>
+            )}
 
             {/* Submit */}
             <button
