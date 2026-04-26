@@ -1,0 +1,133 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-inter: "Inter", sans-serif;
+    --font-syne: "Syne", sans-serif;
+  }
+
+  * {
+    box-sizing: border-box;
+    padding: 0;
+    margin: 0;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: #080808;
+    color: #ffffff;
+    font-family: var(--font-inter);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+  }
+
+  ::selection {
+    background-color: rgba(14, 165, 233, 0.3);
+    color: #ffffff;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #0f0f0f;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(14, 165, 233, 0.4);
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(14, 165, 233, 0.7);
+  }
+}
+
+@layer components {
+  .glass {
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .glass-strong {
+    background: rgba(255, 255, 255, 0.07);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+  }
+
+  .glow-text-blue {
+    text-shadow: 0 0 40px rgba(14, 165, 233, 0.6);
+  }
+
+  .glow-text-gold {
+    text-shadow: 0 0 40px rgba(245, 158, 11, 0.6);
+  }
+
+  .gradient-text {
+    background: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 50%, #f59e0b 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .gradient-text-blue {
+    background: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .btn-primary {
+    @apply relative overflow-hidden bg-electric-blue text-white font-semibold px-6 py-3 rounded-xl
+    transition-all duration-300 hover:shadow-glow-blue hover:scale-105 active:scale-95;
+  }
+
+  .btn-secondary {
+    @apply glass text-white font-semibold px-6 py-3 rounded-xl
+    transition-all duration-300 hover:border-electric-blue/40 hover:bg-white/10 active:scale-95;
+  }
+
+  .section-padding {
+    @apply px-4 sm:px-6 lg:px-8;
+  }
+
+  .container-max {
+    @apply max-w-7xl mx-auto;
+  }
+
+  .feature-card {
+    @apply glass rounded-2xl p-6 transition-all duration-300
+    hover:border-electric-blue/30 hover:shadow-glow-blue-sm hover:-translate-y-1;
+  }
+
+  .grid-bg {
+    background-image: linear-gradient(rgba(14,165,233,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(14,165,233,0.04) 1px, transparent 1px);
+    background-size: 60px 60px;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
