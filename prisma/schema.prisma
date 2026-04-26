@@ -3,19 +3,21 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  // For connection pooling on serverless (Vercel/Neon/Supabase)
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String
-  password  String
-  plan      String   @default("free")   // free | pro | enterprise
+  id          String    @id @default(cuid())
+  email       String    @unique
+  name        String
+  password    String
+  plan        String    @default("free")
   trialEndsAt DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   rooms          Room[]
   savedFurniture SavedFurniture[]
@@ -37,27 +39,27 @@ model Room {
 }
 
 model Design {
-  id          String   @id @default(cuid())
-  roomId      String
-  userId      String
-  styleName   String
-  resultJson  String   // JSON string: AI result / furniture list
-  status      String   @default("pending") // pending | complete | failed
-  createdAt   DateTime @default(now())
+  id         String   @id @default(cuid())
+  roomId     String
+  userId     String
+  styleName  String
+  resultJson String
+  status     String   @default("pending")
+  createdAt  DateTime @default(now())
 
   room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model SavedFurniture {
-  id            String   @id @default(cuid())
-  userId        String
-  furnitureId   Int
-  name          String
-  category      String
-  price         String
-  imageUrl      String
-  savedAt       DateTime @default(now())
+  id          String   @id @default(cuid())
+  userId      String
+  furnitureId Int
+  name        String
+  category    String
+  price       String
+  imageUrl    String
+  savedAt     DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
